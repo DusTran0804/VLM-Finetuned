@@ -1,7 +1,3 @@
-# Requirements for Google Colab Deployment
-# Note: Torch is pre-installed on Colab, so we don't need to specify it.
-# Unsloth requires special installation on Colab which is handled in the Colab_Runner notebook.
-
 ultralytics
 streamlit
 opencv-python-headless
