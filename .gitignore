@@ -1,0 +1,27 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Caches and checkpoints
+unsloth_compiled_cache/
+.ipynb_checkpoints/
+.pytest_cache/
+.vscode/
+.idea/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+
+# Python environments
+venv/
+.venv/
+env/
+ipykernel_launcher.py
+
+# Models & Large weights (Recommended to ignore and upload to Hugging Face/Drive instead)
+Models/
+Result/
+Image/
