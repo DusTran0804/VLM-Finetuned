@@ -24,15 +24,10 @@ def load_models(yolo_path="Models/license_plate_detector_yolov8.pt", unsloth_pat
         from transformers import Qwen2VLForConditionalGeneration, AutoProcessor
         from peft import PeftModel
 
-        st.warning("Đang chạy trên macOS/CPU: Tải mô hình bằng `transformers` + `peft` thay vì `Unsloth`...")
-        
-        # Determine device (mps for Apple Silicon, cpu otherwise)
         device = "mps" if torch.backends.mps.is_available() else "cpu"
-        
-        # Load processor
+
         ocr_tokenizer = AutoProcessor.from_pretrained(unsloth_path)
-        
-        # Load base model in float16 for Apple Silicon MPS, or float32 for CPU
+
         torch_dtype = torch.float16 if device == "mps" else torch.float32
         
         base_model = Qwen2VLForConditionalGeneration.from_pretrained(
@@ -40,8 +35,7 @@ def load_models(yolo_path="Models/license_plate_detector_yolov8.pt", unsloth_pat
             torch_dtype=torch_dtype,
             device_map=None
         ).to(device)
-        
-        # Load LoRA adapter
+
         ocr_model = PeftModel.from_pretrained(base_model, unsloth_path)
         
     return yolo, ocr_model, ocr_tokenizer
@@ -171,8 +165,7 @@ if mode == "Image Upload":
                 text = recognizer.extract_text(plate_img)
                 text_clean = recognizer.preprocess_plate_text(text)
                 processed_plates_info.append((plate_img, text_clean, (x1, y1, x2, y2)))
-                
-                # Draw box and label on annotated_image
+
                 cv2.rectangle(annotated_image, (x1, y1), (x2, y2), (0, 255, 0), 2)
                 cv2.putText(annotated_image, text_clean, (x1, max(25, y1 - 10)), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 0, 255), 2)
             
@@ -194,17 +187,15 @@ if mode == "Image Upload":
                     int((elapsed % 3600) // 60),
                     int(elapsed % 60)
                 ))
-                
-                # --- SAVE TO RESULT FOLDER ---
+
                 try:
                     import csv
                     from datetime import datetime
-                    
-                    # Ensure Result directory exists
+
                     os.makedirs("Result", exist_ok=True)
                     
                     base_name = os.path.splitext(uploaded_file.name)[0]
-                    # Save annotated image
+
                     annotated_save_path = f"Result/{base_name}_annotated.jpg"
                     cv2.imwrite(annotated_save_path, annotated_image)
                     
@@ -217,11 +208,9 @@ if mode == "Image Upload":
                             writer.writerow(["Timestamp", "Source File", "Plate Index", "Plate Text", "Bounding Box", "Annotated Image Path", "Cropped Plate Path"])
                         
                         for i, (plate_img, text_clean, (x1, y1, x2, y2)) in enumerate(processed_plates_info):
-                            # Save cropped plate image
                             plate_save_path = f"Result/{base_name}_plate_{i+1}_{text_clean}.jpg"
                             cv2.imwrite(plate_save_path, plate_img)
-                            
-                            # Write row
+
                             writer.writerow([
                                 datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                                 uploaded_file.name,
@@ -232,8 +221,8 @@ if mode == "Image Upload":
                                 plate_save_path
                             ])
                     
-                    st.success(f"💾 Đã lưu kết quả vào thư mục `Result/`!")
-                    st.info(f"📁 Xem ảnh đã vẽ khung tại: `{annotated_save_path}`")
+                    st.success(f"Đã lưu kết quả vào thư mục `Result/`!")
+                    st.info(f"Xem ảnh đã vẽ khung tại: `{annotated_save_path}`")
                 except Exception as e:
                     st.error(f"Lỗi khi lưu kết quả: {e}")
 
@@ -248,7 +237,7 @@ elif mode == "Video Upload":
         fps = cap.get(cv2.CAP_PROP_FPS)
 
         status_placeholder = st.empty()
-        status_placeholder.info("⏳ Đang xử lý video, vui lòng chờ...")
+        status_placeholder.info("Đang xử lý video, vui lòng chờ...")
 
         frame_count = 0
         start_time = time.time()
@@ -278,8 +267,7 @@ elif mode == "Video Upload":
 
         if detected_plates:
             st.markdown("### Biển số nhận diện được")
-            
-            # --- SAVE TO RESULT FOLDER ---
+
             try:
                 import csv
                 from datetime import datetime
@@ -296,11 +284,9 @@ elif mode == "Video Upload":
                         writer.writerow(["Timestamp", "Source File", "Plate Index", "Plate Text", "Bounding Box", "Annotated Image Path", "Cropped Plate Path"])
                     
                     for idx, (plate_img, text_clean) in enumerate(detected_plates):
-                        # Save cropped plate image
                         plate_save_path = f"Result/{base_name}_video_plate_{idx+1}_{text_clean}.jpg"
                         cv2.imwrite(plate_save_path, plate_img)
-                        
-                        # Write to CSV log
+
                         writer.writerow([
                             datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                             uploaded_video.name,
@@ -310,7 +296,7 @@ elif mode == "Video Upload":
                             "N/A",
                             plate_save_path
                         ])
-                st.success(f"💾 Đã lưu {len(detected_plates)} biển số nhận diện vào thư mục `Result/` và file nhật ký `results_log.csv`!")
+                st.success(f"Đã lưu {len(detected_plates)} biển số nhận diện vào thư mục `Result/` và file nhật ký `results_log.csv`!")
             except Exception as e:
                 st.error(f"Lỗi khi lưu kết quả video: {e}")
 
