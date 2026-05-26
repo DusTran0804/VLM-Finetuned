@@ -1,0 +1,11 @@
+Timestamp,Source File,Plate Index,Plate Text,Bounding Box,Annotated Image Path,Cropped Plate Path
+2026-05-26 12:28:19,bien-so-xe-phong-thuy-5.jpg,1,30F-557.75,"(637,877,1115,1035)",Result/bien-so-xe-phong-thuy-5_annotated.jpg,Result/bien-so-xe-phong-thuy-5_plate_1_30F-557.75.jpg
+2026-05-26 12:31:09,images.jpeg,1,12A-035.04,"(96,119,154,138)",Result/images_annotated.jpg,Result/images_plate_1_12A-035.04.jpg
+2026-05-26 12:32:42,Picture14.png,1,38-F8888,"(221,338,386,475)",Result/Picture14_annotated.jpg,Result/Picture14_plate_1_38-F8888.jpg
+2026-05-26 12:36:08,bien-so-xe-5-so-dep.jpg,1,71-C4092.99,"(362,51,638,257)",Result/bien-so-xe-5-so-dep_annotated.jpg,Result/bien-so-xe-5-so-dep_plate_1_71-C4092.99.jpg
+2026-05-26 12:36:08,bien-so-xe-5-so-dep.jpg,2,71-C4056.77,"(73,50,364,264)",Result/bien-so-xe-5-so-dep_annotated.jpg,Result/bien-so-xe-5-so-dep_plate_2_71-C4056.77.jpg
+2026-05-26 12:36:08,bien-so-xe-5-so-dep.jpg,3,71-C4099.09,"(377,265,694,530)",Result/bien-so-xe-5-so-dep_annotated.jpg,Result/bien-so-xe-5-so-dep_plate_3_71-C4099.09.jpg
+2026-05-26 12:36:08,bien-so-xe-5-so-dep.jpg,4,71-C4098.99,"(32,256,375,529)",Result/bien-so-xe-5-so-dep_annotated.jpg,Result/bien-so-xe-5-so-dep_plate_4_71-C4098.99.jpg
+2026-05-26 12:38:22,images (2).jpeg,1,0-9,"(29,136,64,162)",Result/images (2)_annotated.jpg,Result/images (2)_plate_1_0-9.jpg
+2026-05-26 12:38:22,images (2).jpeg,2,LISTOFALLVALIDLICENSEPLATECHARACTERS0-9A-Z-.,"(272,96,306,132)",Result/images (2)_annotated.jpg,Result/images (2)_plate_2_LISTOFALLVALIDLICENSEPLATECHARACTERS0-9A-Z-..jpg
+2026-05-26 12:38:22,images (2).jpeg,3,123-456-7890,"(165,86,192,112)",Result/images (2)_annotated.jpg,Result/images (2)_plate_3_123-456-7890.jpg

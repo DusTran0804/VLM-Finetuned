@@ -3,7 +3,6 @@ from ultralytics import YOLO
 import cv2
 import time
 from PIL import Image
-from unsloth import FastVisionModel
 import numpy as np
 import re
 import threading
@@ -13,16 +12,56 @@ import os
 @st.cache_resource
 def load_models(yolo_path="Models/license_plate_detector_yolov8.pt", unsloth_path="Models/unsloth_finetune"):
     yolo = YOLO(yolo_path)
-    ocr_model, ocr_tokenizer = FastVisionModel.from_pretrained(model_name=unsloth_path, load_in_4bit=True)
-    FastVisionModel.for_inference(ocr_model)
+    try:
+        import torch
+        if not torch.cuda.is_available():
+            raise ImportError("CUDA is not available, falling back to standard transformers + peft")
+        from unsloth import FastVisionModel
+        ocr_model, ocr_tokenizer = FastVisionModel.from_pretrained(model_name=unsloth_path, load_in_4bit=True)
+        FastVisionModel.for_inference(ocr_model)
+    except (ImportError, ModuleNotFoundError):
+        import torch
+        from transformers import Qwen2VLForConditionalGeneration, AutoProcessor
+        from peft import PeftModel
+
+        st.warning("Đang chạy trên macOS/CPU: Tải mô hình bằng `transformers` + `peft` thay vì `Unsloth`...")
+        
+        # Determine device (mps for Apple Silicon, cpu otherwise)
+        device = "mps" if torch.backends.mps.is_available() else "cpu"
+        
+        # Load processor
+        ocr_tokenizer = AutoProcessor.from_pretrained(unsloth_path)
+        
+        # Load base model in float16 for Apple Silicon MPS, or float32 for CPU
+        torch_dtype = torch.float16 if device == "mps" else torch.float32
+        
+        base_model = Qwen2VLForConditionalGeneration.from_pretrained(
+            "Qwen/Qwen2-VL-2B-Instruct",
+            torch_dtype=torch_dtype,
+            device_map=None
+        ).to(device)
+        
+        # Load LoRA adapter
+        ocr_model = PeftModel.from_pretrained(base_model, unsloth_path)
+        
     return yolo, ocr_model, ocr_tokenizer
 
 class LicensePlateRecognizer:
-    def __init__(self, yolo, ocr_model, ocr_tokenizer, device="cuda"):
+    def __init__(self, yolo, ocr_model, ocr_tokenizer, device=None):
         self.yolo = yolo
         self.ocr_model = ocr_model
         self.ocr_tokenizer = ocr_tokenizer
-        self.device = device
+        
+        if device is None:
+            import torch
+            if torch.cuda.is_available():
+                self.device = "cuda"
+            elif torch.backends.mps.is_available():
+                self.device = "mps"
+            else:
+                self.device = "cpu"
+        else:
+            self.device = device
 
     def detect_plates(self, image):
         results = self.yolo.predict(image, device=self.device)[0]
@@ -115,32 +154,88 @@ if mode == "Image Upload":
         file_bytes = np.asarray(bytearray(uploaded_file.read()), dtype=np.uint8)
         image = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
         plates = recognizer.detect_plates(image)
+        
         col1, col2 = st.columns([1, 1])
-        with col1:
-            st.image(cv2.cvtColor(image, cv2.COLOR_BGR2RGB), caption="Original image", use_container_width=True)
-        with col2:
-            if not plates:
+        
+        if not plates:
+            with col1:
+                st.image(cv2.cvtColor(image, cv2.COLOR_BGR2RGB), caption="Original image", use_column_width=True)
+            with col2:
                 st.warning("No plates detected.")
-            else:
-                start = time.time()
-
-                for i, (plate_img, (x1, y1, x2, y2)) in enumerate(plates[:max_boxes]):
-                    text = recognizer.extract_text(plate_img)
-                    text_clean = recognizer.preprocess_plate_text(text)
-
+        else:
+            start = time.time()
+            annotated_image = image.copy()
+            processed_plates_info = []
+            
+            for i, (plate_img, (x1, y1, x2, y2)) in enumerate(plates[:max_boxes]):
+                text = recognizer.extract_text(plate_img)
+                text_clean = recognizer.preprocess_plate_text(text)
+                processed_plates_info.append((plate_img, text_clean, (x1, y1, x2, y2)))
+                
+                # Draw box and label on annotated_image
+                cv2.rectangle(annotated_image, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                cv2.putText(annotated_image, text_clean, (x1, max(25, y1 - 10)), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 0, 255), 2)
+            
+            elapsed = time.time() - start
+            
+            with col1:
+                st.image(cv2.cvtColor(annotated_image, cv2.COLOR_BGR2RGB), caption="Processed image", use_column_width=True)
+            
+            with col2:
+                for i, (plate_img, text_clean, (x1, y1, x2, y2)) in enumerate(processed_plates_info):
                     st.image(cv2.cvtColor(plate_img, cv2.COLOR_BGR2RGB))
-
                     st.markdown(
                         f"<h3 style='color:red; text-align:left;'>Plate #{i+1}: {text_clean}</h3>",
                         unsafe_allow_html=True
                     )
                 
-                elapsed = time.time() - start
                 st.write('\nThời gian xử lý: {:02d}:{:02d}:{:02d}'.format(
                     int(elapsed // 3600),
                     int((elapsed % 3600) // 60),
                     int(elapsed % 60)
                 ))
+                
+                # --- SAVE TO RESULT FOLDER ---
+                try:
+                    import csv
+                    from datetime import datetime
+                    
+                    # Ensure Result directory exists
+                    os.makedirs("Result", exist_ok=True)
+                    
+                    base_name = os.path.splitext(uploaded_file.name)[0]
+                    # Save annotated image
+                    annotated_save_path = f"Result/{base_name}_annotated.jpg"
+                    cv2.imwrite(annotated_save_path, annotated_image)
+                    
+                    csv_path = "Result/results_log.csv"
+                    file_exists = os.path.exists(csv_path)
+                    
+                    with open(csv_path, mode="a", newline="", encoding="utf-8") as f:
+                        writer = csv.writer(f)
+                        if not file_exists:
+                            writer.writerow(["Timestamp", "Source File", "Plate Index", "Plate Text", "Bounding Box", "Annotated Image Path", "Cropped Plate Path"])
+                        
+                        for i, (plate_img, text_clean, (x1, y1, x2, y2)) in enumerate(processed_plates_info):
+                            # Save cropped plate image
+                            plate_save_path = f"Result/{base_name}_plate_{i+1}_{text_clean}.jpg"
+                            cv2.imwrite(plate_save_path, plate_img)
+                            
+                            # Write row
+                            writer.writerow([
+                                datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                uploaded_file.name,
+                                i + 1,
+                                text_clean,
+                                f"({x1},{y1},{x2},{y2})",
+                                annotated_save_path,
+                                plate_save_path
+                            ])
+                    
+                    st.success(f"💾 Đã lưu kết quả vào thư mục `Result/`!")
+                    st.info(f"📁 Xem ảnh đã vẽ khung tại: `{annotated_save_path}`")
+                except Exception as e:
+                    st.error(f"Lỗi khi lưu kết quả: {e}")
 
 elif mode == "Video Upload":
     uploaded_video = st.file_uploader("Upload a video", type=["mp4", "avi", "mov", "mkv"])
@@ -183,6 +278,42 @@ elif mode == "Video Upload":
 
         if detected_plates:
             st.markdown("### Biển số nhận diện được")
+            
+            # --- SAVE TO RESULT FOLDER ---
+            try:
+                import csv
+                from datetime import datetime
+                
+                os.makedirs("Result", exist_ok=True)
+                
+                base_name = os.path.splitext(uploaded_video.name)[0]
+                csv_path = "Result/results_log.csv"
+                file_exists = os.path.exists(csv_path)
+                
+                with open(csv_path, mode="a", newline="", encoding="utf-8") as f:
+                    writer = csv.writer(f)
+                    if not file_exists:
+                        writer.writerow(["Timestamp", "Source File", "Plate Index", "Plate Text", "Bounding Box", "Annotated Image Path", "Cropped Plate Path"])
+                    
+                    for idx, (plate_img, text_clean) in enumerate(detected_plates):
+                        # Save cropped plate image
+                        plate_save_path = f"Result/{base_name}_video_plate_{idx+1}_{text_clean}.jpg"
+                        cv2.imwrite(plate_save_path, plate_img)
+                        
+                        # Write to CSV log
+                        writer.writerow([
+                            datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                            uploaded_video.name,
+                            idx + 1,
+                            text_clean,
+                            "N/A (video detection)",
+                            "N/A",
+                            plate_save_path
+                        ])
+                st.success(f"💾 Đã lưu {len(detected_plates)} biển số nhận diện vào thư mục `Result/` và file nhật ký `results_log.csv`!")
+            except Exception as e:
+                st.error(f"Lỗi khi lưu kết quả video: {e}")
+
             cols_per_row = 4 
             rows = (len(detected_plates) + cols_per_row - 1) // cols_per_row
             idx = 0
@@ -195,7 +326,7 @@ elif mode == "Video Upload":
                             st.image(
                                 cv2.cvtColor(plate_img, cv2.COLOR_BGR2RGB),
                                 caption=f"**{text_clean}**",
-                                use_container_width=True,
+                                use_column_width=True,
                             )
                         idx += 1
 
@@ -268,7 +399,7 @@ elif mode in ("Webcam (local)", "RTSP / IP Camera"):
                     last_time = now
                     cv2.putText(frame, f"FPS: {fps:.1f}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 0), 2)
 
-                video_slot.image(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB), use_container_width=True)
+                video_slot.image(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB), use_column_width=True)
 
                 time.sleep(0.03)
         except Exception as e:
