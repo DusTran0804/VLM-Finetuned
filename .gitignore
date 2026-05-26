@@ -21,7 +21,7 @@ venv/
 env/
 ipykernel_launcher.py
 
-# Models & Large weights (Recommended to ignore and upload to Hugging Face/Drive instead)
-Models/
-Result/
-Image/
+# Models & Large weights are tracked using Git LFS
+# Models/
+# Result/
+# Image/
