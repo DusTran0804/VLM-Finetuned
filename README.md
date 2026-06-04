@@ -102,8 +102,4 @@ Sau mỗi lượt xử lý ảnh hoặc video thành công, hệ thống tự đ
 
 ---
 
-## Lưu Ý Quan Trọng
-- **Hiệu Năng trên Mac M-Series**: Khi chạy trên macOS (MPS GPU), tốc độ suy luận sẽ nhanh hơn đáng kể so với CPU thông thường. Trong lần chạy đầu tiên, hãy kiên nhẫn để Hugging Face tải mô hình gốc `Qwen2-VL-2B-Instruct` từ internet về máy (dung lượng khoảng 4.5 GB).
-- **Sử dụng GPU**: Qwen2-VL cần xử lý tính toán lớn. Nếu chạy hoàn toàn bằng CPU thông thường, tốc độ xử lý (FPS) sẽ bị giảm sút.
-- **Lỗi Luồng RTSP**: Nếu luồng camera IP bị gián đoạn, hãy kiểm tra lại thông tin tài khoản đăng nhập trong URL RTSP hoặc độ trễ mạng của Camera.
 
