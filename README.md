@@ -1,3 +1,12 @@
+---
+title: LPR Server
+emoji: 🚗
+colorFrom: blue
+colorTo: green
+sdk: docker
+pinned: false
+---
+
 # License Plate Recognition (LPR) với YOLOv8 & Fine-Tuned VLM (Qwen2-VL)
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/DusTran0804/VLM-Finetuned/blob/main/Run_Server_Colab.ipynb)
