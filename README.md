@@ -1,5 +1,7 @@
 # License Plate Recognition (LPR) với YOLOv8 & Fine-Tuned VLM (Qwen2-VL)
 
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/DusTran0804/VLM-Finetuned/blob/main/Run_Server_Colab.ipynb)
+
 ![LPR Demo UI Mockup](assets/demo_ui.png)
 
 Dự án này là một hệ thống **Nhận diện Biển số xe (LPR - License Plate Recognition)** kết hợp sức mạnh của mô hình phát hiện vật thể **YOLOv8** và mô hình ngôn ngữ thị giác lớn (VLM) **Qwen2-VL-2B-Instruct** được tinh chỉnh (fine-tuned) bằng **Unsloth** để thực hiện OCR biển số xe với độ chính xác cao.
