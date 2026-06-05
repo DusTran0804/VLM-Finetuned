@@ -3,6 +3,7 @@ services:
   - type: web
     name: lpr-server
     env: python
+    plan: free
     buildCommand: "pip install -r requirements.txt"
     startCommand: "uvicorn server:app --host 0.0.0.0 --port $PORT"
     envVars:
@@ -13,6 +14,7 @@ services:
   - type: web
     name: lpr-client
     env: python
+    plan: free
     buildCommand: "pip install -r requirements.txt"
     startCommand: "streamlit run client.py --server.port $PORT --server.address 0.0.0.0"
     envVars:
