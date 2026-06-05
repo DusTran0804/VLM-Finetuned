@@ -6,3 +6,7 @@ datasets
 transformers
 trl
 localtunnel
+fastapi
+uvicorn
+python-multipart
+requests
