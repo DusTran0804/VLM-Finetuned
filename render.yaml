@@ -1,0 +1,22 @@
+services:
+  # 1. FastAPI Server
+  - type: web
+    name: lpr-server
+    env: python
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "uvicorn server:app --host 0.0.0.0 --port $PORT"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.10.0
+
+  # 2. Streamlit Client
+  - type: web
+    name: lpr-client
+    env: python
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "streamlit run client.py --server.port $PORT --server.address 0.0.0.0"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.10.0
+      - key: API_URL
+        value: "https://lpr-server.onrender.com" # Server URL mặc định trên Render (Sửa lại nếu tên service bị thay đổi)
