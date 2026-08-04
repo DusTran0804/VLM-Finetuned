@@ -14,6 +14,10 @@ from PIL import Image
 # Initialize FastAPI app
 app = FastAPI(title="License Plate Recognition API")
 
+@app.get("/")
+async def root():
+    return {"status": "ok", "message": "License Plate Recognition API is running"}
+
 # Global variables for models
 yolo_model = None
 ocr_model = None
