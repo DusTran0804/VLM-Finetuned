@@ -6,7 +6,7 @@ import base64
 import time
 import os
 
-API_URL = os.getenv("API_URL", "http://localhost:8000")
+API_URL = os.getenv("API_URL", "https://duc08042006-vlm-finetuned.hf.space")
 
 st.set_page_config(page_title="LPR Client", layout="wide")
 st.title("License Plate Recognition - API Client")
